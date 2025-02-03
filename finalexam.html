@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+
+        header {
+            background-color: #ff6f00;
+            color: white;
+            padding: 15px;
+            font-size: 24px;
+        }
+
+        .produk-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .produk {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 250px;
+            margin: 15px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .produk:hover {
+            transform: scale(1.05);
+        }
+
+        .produk img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .produk h2 {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .produk p {
+            font-size: 16px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .produk button {
+            background-color: #ff6f00;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .produk button:hover {
+            background-color: #e65c00;
+        }
+
+        /* Keranjang */
+        .keranjang {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .keranjang h2 {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .keranjang-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .keranjang-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .keranjang-list button {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .keranjang-list button:hover {
+            background-color: darkred;
+        }
+
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .checkout {
+            background-color: green;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            margin-top: 15px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .checkout:hover {
+            background-color: darkgreen;
+        }
+
+        .loading {
+            font-size: 18px;
+            margin-top: 20px;
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Toko Snack</h1>
+    </header>
+
+    <main>
+        <p class="loading">⏳ Memuat produk...</p>
+        <div id="produk-container" class="produk-grid"></div>
+    </main>
+
+    <section class="keranjang">
+        <h2>🛒 Keranjang Belanja</h2>
+        <ul id="keranjang-list" class="keranjang-list"></ul>
+        <p class="total">Total: <span id="total-harga">Rp 0</span></p>
+        <button class="checkout" onclick="checkoutWhatsApp()">Checkout via WhatsApp</button>
+    </section>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const produkContainer = document.getElementById("produk-container");
+            const keranjangList = document.getElementById("keranjang-list");
+            const totalHargaElement = document.getElementById("total-harga");
+            const loadingElement = document.querySelector(".loading");
+
+            let keranjang = [];
+            let produkList = [];
+
+            function updateKeranjang() {
+                keranjangList.innerHTML = "";
+                let totalHarga = 0;
+
+                keranjang.forEach((item, index) => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `
+                        ${item.nama} x ${item.jumlah} - Rp ${(item.harga * item.jumlah).toLocaleString()} 
+                        <button onclick="hapusDariKeranjang(${index})">❌</button>
+                    `;
+                    keranjangList.appendChild(li);
+                    totalHarga += item.harga * item.jumlah;
+                });
+
+                totalHargaElement.innerText = `Rp ${totalHarga.toLocaleString()}`;
+            }
+
+            window.tambahKeKeranjang = function (index) {
+                let item = produkList[index];
+                let existingItem = keranjang.find(p => p.nama === item.nama);
+
+                if (existingItem) {
+                    existingItem.jumlah += 1;
+                } else {
+                    keranjang.push({ ...item, jumlah: 1 });
+                }
+                updateKeranjang();
+            };
+
+            window.hapusDariKeranjang = function (index) {
+                keranjang.splice(index, 1);
+                updateKeranjang();
+            };
+
+            window.checkoutWhatsApp = function () {
+                if (keranjang.length === 0) {
+                    alert("Keranjang masih kosong!");
+                    return;
+                }
+
+                const nomorWhatsApp = "6281990650238"; // Ganti dengan nomor tujuan
+                let pesan = "Halo, saya ingin membeli:\n\n";
+
+                keranjang.forEach((item, index) => {
+                    pesan += `${index + 1}. ${item.nama} x ${item.jumlah} - Rp ${(item.harga * item.jumlah).toLocaleString()}\n`;
+                });
+
+                let totalHarga = keranjang.reduce((total, item) => total + (item.harga * item.jumlah), 0);
+                pesan += `\nTotal Harga: Rp ${totalHarga.toLocaleString()}\n\nTerima kasih!`;
+
+                const urlWhatsApp = `https://wa.me/${nomorWhatsApp}?text=${encodeURIComponent(pesan)}`;
+                window.open(urlWhatsApp, "_blank");
+            };
+
+            function loadProduk() {
+                fetch("https://67a0a6685bcfff4fabe0176a.mockapi.io/wika0206/product")
+                    .then(response => response.json())
+                    .then(data => {
+                        produkList = data.map(item => ({
+                            nama: item.nama,
+                            harga: parseInt(item.harga),
+                            gambar: item.gambar
+                        }));
+
+                        loadingElement.style.display = "none";
+
+                        produkList.forEach((produk, index) => {
+                            const produkElement = document.createElement("div");
+                            produkElement.classList.add("produk");
+
+                            produkElement.innerHTML = `
+                                <img src="${produk.gambar}" alt="${produk.nama}">
+                                <h2>${produk.nama}</h2>
+                                <p>Rp ${produk.harga.toLocaleString()}</p>
+                                <button onclick="tambahKeKeranjang(${index})">Tambah ke Keranjang</button>
+                            `;
+
+                            produkContainer.appendChild(produkElement);
+                        });
+                    })
+                    .catch(error => {
+                        loadingElement.innerText = "❌ Gagal memuat produk!";
+                        console.error("Error fetching data:", error);
+                    });
+            }
+
+            loadProduk();
+        });
+    </script>
+
+</body>
+</html>
